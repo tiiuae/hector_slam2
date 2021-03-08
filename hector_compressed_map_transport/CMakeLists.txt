@@ -43,7 +43,7 @@ ament_target_dependencies(map_to_image_node
 install(TARGETS map_to_image_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION bin/${PROJECT_NAME}
 )
 
 ament_package()
