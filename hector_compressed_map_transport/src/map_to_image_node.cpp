@@ -40,6 +40,7 @@
 #include <hector_map_tools/HectorMapTools.h>
 
 using namespace std;
+using std::placeholders::_1;
 
 /**
  * @brief This node provides occupancy grid maps as images via image_transport, so the transmission consumes less bandwidth.
@@ -51,12 +52,15 @@ public:
   MapAsImageProvider() : Node("map_to_image_node")
   {
 
-    image_transport_ = new image_transport::ImageTransport(n_);
+    image_transport_ = new image_transport::ImageTransport(rclcpp::Node::make_shared("image_transport"));
     image_transport_publisher_full_ = image_transport_->advertise("map_image/full", 1);
     image_transport_publisher_tile_ = image_transport_->advertise("map_image/tile", 1);
-
-    auto pose_sub_ = n_.subscribe("pose", 1, &MapAsImageProvider::poseCallback, this);
-    auto map_sub_ = n_.subscribe("map", 1, &MapAsImageProvider::mapCallback, this);
+    
+    /* auto pose_sub_ = n_.subscribe("pose", 1, &MapAsImageProvider::poseCallback, this); */
+    /* auto map_sub_ = n_.subscribe("map", 1, &MapAsImageProvider::mapCallback, this); */
+    
+    pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>("pose", 1, std::bind(&MapAsImageProvider::poseCallback, this, _1));
+    map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>("map", 1, std::bind(&MapAsImageProvider::mapCallback, this, _1));
 
     //Which frame_id makes sense?
     cv_img_full_.header.frame_id = "map_image";
@@ -69,7 +73,7 @@ public:
     p_size_tiled_map_image_x_ = 64;
     p_size_tiled_map_image_y_ = 64;
 
-    ROS_INFO("Map to Image node started.");
+    RCLCPP_INFO(this->get_logger(),"Map to Image node started.");
   }
 
   ~MapAsImageProvider()
@@ -78,19 +82,19 @@ public:
   }
 
   //We assume the robot position is available as a PoseStamped here (querying tf would be the more general option)
-  void poseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& pose)
+  void poseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr pose)
   {
     pose_ptr_ = pose;
   }
 
   //The map->image conversion runs every time a new map is received at the moment
-  void mapCallback(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr& map)
+  void mapCallback(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr map)
   {
     int size_x = map->info.width;
     int size_y = map->info.height;
 
     if ((size_x < 3) || (size_y < 3) ){
-      ROS_INFO("Map size is only x: %d,  y: %d . Not running map to image conversion", size_x, size_y);
+      RCLCPP_INFO(this->get_logger(), "Map size is only x: %d,  y: %d . Not running map to image conversion", size_x, size_y);
       return;
     }
 
@@ -234,8 +238,8 @@ public:
     }
   }
 
-  /* ros::Subscriber map_sub_; */
-  /* ros::Subscriber pose_sub_; */
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
 
   image_transport::Publisher image_transport_publisher_full_;
   image_transport::Publisher image_transport_publisher_tile_;
@@ -263,7 +267,7 @@ int main(int argc, char** argv)
 
   MapAsImageProvider map_image_provider;
 
-  rclcpp::spin(std::make_shared<>());
+  rclcpp::spin(std::make_shared<MapAsImageProvider>());
 
   return 0;
 }
