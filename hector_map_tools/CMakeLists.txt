@@ -20,8 +20,8 @@ find_package(nav_msgs REQUIRED)
 
 ament_export_include_directories(include)
 
-install(DIRECTORY include/
-  DESTINATION include
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include/${PROJECT_NAME}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
