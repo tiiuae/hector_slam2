@@ -32,9 +32,9 @@
 #include "util/HectorDebugInfoInterface.h"
 #include "util/UtilFunctions.h"
 
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 
-#include "hector_mapping/HectorDebugInfo.h"
+/* #include "hector_mapping/HectorDebugInfo.h" */
 
 namespace hector_mapping
 {

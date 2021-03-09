@@ -32,9 +32,9 @@
 #include "util/DrawInterface.h"
 #include "util/UtilFunctions.h"
 
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 
-#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <Eigen/Dense>
 

@@ -27,9 +27,9 @@
 //=================================================================================================
 
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
-#include "HectorMapperRos.h"
+#include "hector_mapping/HectorMapperRos.h"
 
 int main(int argc, char** argv)
 {

@@ -27,15 +27,16 @@
 //=================================================================================================
 
 #include "hector_mapping/PoseInfoContainer.h"
+#include <rclcpp/qos_event.hpp>
 
-void PoseInfoContainer::update(const Eigen::Vector3f& slamPose, const Eigen::Matrix3f& slamCov, const ros::Time& stamp, const std::string& frame_id)
+void PoseInfoContainer::update(const Eigen::Vector3f& slamPose, const Eigen::Matrix3f& slamCov, const rclcpp::Time& stamp, const std::string& frame_id)
 {
   //Fill stampedPose
-  std_msgs::Header& header = stampedPose_.header;
+  std_msgs::msg::Header& header = stampedPose_.header;
   header.stamp = stamp;
   header.frame_id = frame_id;
 
-  geometry_msgs::Pose& pose = stampedPose_.pose;
+  geometry_msgs::msg::Pose& pose = stampedPose_.pose;
   pose.position.x = slamPose.x();
   pose.position.y = slamPose.y();
 
@@ -43,11 +44,10 @@ void PoseInfoContainer::update(const Eigen::Vector3f& slamPose, const Eigen::Mat
   pose.orientation.z = sin(slamPose.z()*0.5f);
 
   //Fill covPose
-  //geometry_msgs::PoseWithCovarianceStamped covPose;
   covPose_.header = header;
   covPose_.pose.pose = pose;
 
-  boost::array<double, 36>& cov(covPose_.pose.covariance);
+  std::array<double, 36>& cov(covPose_.pose.covariance);
 
   cov[0] = static_cast<double>(slamCov(0,0));
   cov[7] = static_cast<double>(slamCov(1,1));
@@ -66,5 +66,6 @@ void PoseInfoContainer::update(const Eigen::Vector3f& slamPose, const Eigen::Mat
   cov[31] = yaC;
 
   //Fill tf tansform
-  tf::poseMsgToTF(pose, poseTransform_);
+  poseTransform_.setOrigin( tf2::Vector3(pose.position.x, pose.position.y, pose.position.z));
+  poseTransform_.setRotation( tf2::Quaternion(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w));
 }

@@ -29,20 +29,27 @@
 #ifndef HECTOR_MAPPING_ROS_H__
 #define HECTOR_MAPPING_ROS_H__
 
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 
-#include <nodelet/nodelet.h>
-
-#include "tf/transform_listener.h"
-#include "tf/transform_broadcaster.h"
-#include "tf/message_filter.h"
 #include "message_filters/subscriber.h"
 
-#include "sensor_msgs/LaserScan.h"
-#include <std_msgs/String.h>
+#include <sensor_msgs/msg/laser_scan.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
+#include <rclcpp/publisher_base.hpp>
+#include <rclcpp/service.hpp>
+#include <rclcpp/subscription.hpp>
+#include <rclcpp/subscription_base.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <tf2_ros/message_filter.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
 
-#include "laser_geometry/laser_geometry.h"
-#include "nav_msgs/GetMap.h"
+#include <laser_geometry/laser_geometry.hpp>
+#include <nav_msgs/srv/get_map.hpp>
+#include <nav_msgs/srv/detail/get_map__struct.hpp>
 
 #include "slam_main/HectorSlamProcessor.h"
 
@@ -61,35 +68,36 @@ class HectorDebugInfoProvider;
 
 class MapPublisherContainer {
 public:
-  ros::Publisher             mapPublisher_;
-  ros::Publisher             mapMetadataPublisher_;
-  nav_msgs::GetMap::Response map_;
-  ros::ServiceServer         dynamicMapServiceServer_;
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr mapPublisher_;
+  rclcpp::Publisher<nav_msgs::msg::MapMetaData>::SharedPtr  mapMetadataPublisher_;
+  nav_msgs::srv::GetMap::Response map_;
+  rclcpp::Service<nav_msgs::srv::GetMap> dynamicMapServiceServer_;
 };
 
-class HectorMappingRos : public nodelet::Nodelet {
+class HectorMappingRos : public rclcpp::Node {
 public:
   virtual void onInit();
 
-  void scanCallback(const sensor_msgs::LaserScan& scan);
-  void sysMsgCallback(const std_msgs::String& string);
+  void scanCallback(const sensor_msgs::msg::LaserScan& scan);
+  void sysMsgCallback(const std_msgs::msg::String& string);
 
-  bool mapCallback(nav_msgs::GetMap::Request& req, nav_msgs::GetMap::Response& res);
+  bool mapCallback(nav_msgs::srv::GetMap::Request& req, nav_msgs::srv::GetMap::Response& res);
 
-  void publishMap(MapPublisherContainer& map_, const hectorslam::GridMap& gridMap, ros::Time timestamp, MapLockerInterface* mapMutex = 0);
+  void publishMap(MapPublisherContainer& map_, const hectorslam::GridMap& gridMap, rclcpp::Time timestamp, MapLockerInterface* mapMutex = 0);
 
-  bool rosLaserScanToDataContainer(const sensor_msgs::LaserScan& scan, hectorslam::DataContainer& dataContainer, float scaleToMap);
-  bool rosPointCloudToDataContainer(const sensor_msgs::PointCloud& pointCloud, const tf::StampedTransform& laserTransform,
+  bool rosLaserScanToDataContainer(const sensor_msgs::msg::LaserScan& scan, hectorslam::DataContainer& dataContainer, float scaleToMap);
+  bool rosPointCloudToDataContainer(const sensor_msgs::msg::PointCloud& pointCloud, const geometry_msgs::msg::TransformStamped& laserTransform,
                                     hectorslam::DataContainer& dataContainer, float scaleToMap);
+/* http://wiki.ros.org/tf2/Tutorials/Migration/DataConversions */
 
-  void setServiceGetMapData(nav_msgs::GetMap::Response& map_, const hectorslam::GridMap& gridMap);
+  void setServiceGetMapData(nav_msgs::srv::GetMap::Response& map_, const hectorslam::GridMap& gridMap);
 
   void publishTransformLoop(double p_transform_pub_period_);
   void publishMapLoop(double p_map_pub_period_);
   void publishTransform();
 
-  void staticMapCallback(const nav_msgs::OccupancyGrid& map);
-  void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
+  void staticMapCallback(const nav_msgs::msg::OccupancyGrid& map);
+  void initialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped& msg);
 
   /*
   void setStaticMapData(const nav_msgs::OccupancyGrid& map);
@@ -101,30 +109,33 @@ protected:
 
   int lastGetMapUpdateIndex;
 
-  ros::NodeHandle node_;
+  /* ros::NodeHandle node_; */
 
-  ros::Subscriber scanSubscriber_;
-  ros::Subscriber sysMsgSubscriber_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scanSuvscriber_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sysMsgSubscriber_;
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mapSubscriber_;
 
-  ros::Subscriber                                                        mapSubscriber_;
-  message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped>* initial_pose_sub_;
-  tf::MessageFilter<geometry_msgs::PoseWithCovarianceStamped>*           initial_pose_filter_;
+  message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>* initial_pose_sub_;
+  tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>*           initial_pose_filter_;
 
-  ros::Publisher posePublisher_;
-  ros::Publisher poseUpdatePublisher_;
-  ros::Publisher twistUpdatePublisher_;
-  ros::Publisher odometryPublisher_;
-  ros::Publisher scan_point_cloud_publisher_;
+  /* ros::Publisher odometryPublisher_; */
+  /* ros::Publisher scan_point_cloud_publisher_; */
+
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr posePublisher_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr poseUpdatePublisher_;
+  /* rclcpp::Publisher<>::SharedPtr twistUpdatePublisher_; */
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odometryPublisher_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr scan_point_cloud_publisher_;
 
   std::vector<MapPublisherContainer> mapPubContainer;
 
-  tf::TransformListener     tf_;
+  tf2_ros::TransformListener     tf_;
 
-  std::unique_ptr<tf::TransformBroadcaster> tfB_;
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
 
   laser_geometry::LaserProjection projector_;
 
-  tf::Transform map_to_odom_;
+  tf2::Transform map_to_odom_;
 
   std::unique_ptr<boost::thread> map__publish_thread_;
 
@@ -134,10 +145,10 @@ protected:
 
   PoseInfoContainer poseInfoContainer_;
 
-  sensor_msgs::PointCloud laser_point_cloud_;
+  sensor_msgs::msg::PointCloud laser_point_cloud_;
 
-  ros::Time       lastMapPublishTime;
-  ros::Time       lastScanTime;
+  rclcpp::Time       lastMapPublishTime;
+  rclcpp::Time       lastScanTime;
   Eigen::Vector3f lastSlamPose;
 
   bool            initial_pose_set_;
