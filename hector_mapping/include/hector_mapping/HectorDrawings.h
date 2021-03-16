@@ -42,15 +42,15 @@
 namespace hector_mapping
 {
 
-class HectorDrawings : public DrawInterface {
+class HectorDrawings : public DrawInterface, public rclcpp::Node {
 public:
-  HectorDrawings() {
+  HectorDrawings() : Node("hector_drawings"){
     idCounter = 0;
 
-    ros::NodeHandle nh_;
+    /* ros::NodeHandle nh_; */
 
-    markerPublisher_      = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
-    markerArrayPublisher_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1, true);
+    markerPublisher_      = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 1);
+    markerArrayPublisher_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("visualization_marker_array", 1);
 
     tempMarker.header.frame_id = "map";
     tempMarker.ns              = "slam";
@@ -58,7 +58,7 @@ public:
     this->setScale(1.0);
     this->setColor(1.0, 1.0, 1.0);
 
-    tempMarker.action = visualization_msgs::Marker::ADD;
+    tempMarker.action = visualization_msgs::msg::Marker::ADD;
   };
 
   virtual void drawPoint(const Eigen::Vector2f& pointWorldFrame) {
@@ -69,7 +69,7 @@ public:
 
     tempMarker.pose.orientation.w = 0.0;
     tempMarker.pose.orientation.z = 0.0;
-    tempMarker.type               = visualization_msgs::Marker::CUBE;
+    tempMarker.type               = visualization_msgs::msg::Marker::CUBE;
 
     // markerPublisher_.publish(tempMarker);
 
@@ -85,7 +85,7 @@ public:
     tempMarker.pose.orientation.w = cos(poseWorld.z() * 0.5f);
     tempMarker.pose.orientation.z = sin(poseWorld.z() * 0.5f);
 
-    tempMarker.type = visualization_msgs::Marker::ARROW;
+    tempMarker.type = visualization_msgs::msg::Marker::ARROW;
 
     // markerPublisher_.publish(tempMarker);
 
@@ -103,7 +103,7 @@ public:
 
     float angle = (atan2(eigVectors(1, 0), eigVectors(0, 0)));
 
-    tempMarker.type = visualization_msgs::Marker::CYLINDER;
+    tempMarker.type = visualization_msgs::msg::Marker::CYLINDER;
 
     double lengthMajor = sqrt(eigValues[0]);
     double lengthMinor = sqrt(eigValues[1]);
@@ -141,21 +141,24 @@ public:
   }
 
   virtual void sendAndResetData() {
-    markerArrayPublisher_.publish(markerArray);
+    markerArrayPublisher_->publish(markerArray);
     markerArray.markers.clear();
     idCounter = 0;
   }
 
-  void setTime(const ros::Time& time) {
+  void setTime(const rclcpp::Time& time) {
     tempMarker.header.stamp = time;
   }
 
 
-  ros::Publisher markerPublisher_;
-  ros::Publisher markerArrayPublisher_;
+  /* ros::Publisher markerPublisher_; */
+  /* ros::Publisher markerArrayPublisher_; */
 
-  visualization_msgs::Marker      tempMarker;
-  visualization_msgs::MarkerArray markerArray;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr markerPublisher_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr markerArrayPublisher_;
+
+  visualization_msgs::msg::Marker      tempMarker;
+  visualization_msgs::msg::MarkerArray markerArray;
 
   int idCounter;
 };

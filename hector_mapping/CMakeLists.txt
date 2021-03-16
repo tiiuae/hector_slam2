@@ -54,7 +54,7 @@ add_library(HectorMappingRos SHARED
 
 ament_export_include_directories(include)
 ament_export_libraries(HectorMappingRos)
-ament_export_dependencies(rclcpp nav_msgs visualization_msgs tf2 tf2_ros message_filters laser_geometry message_runtime eigen3_cmake_module sensor_msgs)
+ament_export_dependencies(rclcpp nav_msgs visualization_msgs tf2 tf2_ros message_filters laser_geometry eigen3_cmake_module sensor_msgs)
 ament_export_dependencies(Eigen3)
 # add_dependencies(HectorMappingRos hector_mapping_generate_messages_cpp)
 ament_target_dependencies(HectorMappingRos
@@ -68,6 +68,11 @@ ament_target_dependencies(HectorMappingRos
   sensor_msgs
 )
 target_link_libraries(HectorMappingRos ${Boost_LIBRARIES} ${Eigen3_LIBRARIES})
+
+rosidl_target_interfaces(HectorMappingRos
+  ${PROJECT_NAME}
+  "rosidl_typesupport_cpp"
+  )
 
 ### INSTALLATION
 
