@@ -57,6 +57,7 @@
 #include "util/MapLockerInterface.h"
 
 #include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "PoseInfoContainer.h"
 
@@ -68,17 +69,19 @@ class HectorDebugInfoProvider;
 
 class MapPublisherContainer {
 public:
+  MapPublisherContainer();
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr mapPublisher_;
   rclcpp::Publisher<nav_msgs::msg::MapMetaData>::SharedPtr  mapMetadataPublisher_;
   nav_msgs::srv::GetMap::Response map_;
-  rclcpp::Service<nav_msgs::srv::GetMap> dynamicMapServiceServer_;
+  rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr dynamicMapServiceServer_;
 };
 
 class HectorMappingRos : public rclcpp::Node {
 public:
-  virtual void onInit();
 
-  void scanCallback(const sensor_msgs::msg::LaserScan& scan);
+  HectorMappingRos(rclcpp::NodeOptions options);
+
+  void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan);
   void sysMsgCallback(const std_msgs::msg::String& string);
 
   bool mapCallback(nav_msgs::srv::GetMap::Request& req, nav_msgs::srv::GetMap::Response& res);
@@ -111,7 +114,7 @@ protected:
 
   /* ros::NodeHandle node_; */
 
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scanSuvscriber_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scanSubscriber_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sysMsgSubscriber_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mapSubscriber_;
 
@@ -172,7 +175,7 @@ protected:
   std::string p_pose_update_topic_;
   std::string p_twist_update_topic_;
 
-  bool p_pub_drawings;
+  bool p_pub_drawings_;
   bool p_pub_debug_output_;
   bool p_pub_map_odom_transform_;
   bool p_pub_odometry_;
