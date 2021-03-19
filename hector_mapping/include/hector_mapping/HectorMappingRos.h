@@ -38,6 +38,7 @@
 #include <sensor_msgs/msg/point_cloud.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <rclcpp/publisher_base.hpp>
 #include <rclcpp/service.hpp>
 #include <rclcpp/subscription.hpp>
@@ -46,6 +47,7 @@
 #include <tf2_ros/message_filter.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/buffer.h>
 
 #include <laser_geometry/laser_geometry.hpp>
 #include <nav_msgs/srv/get_map.hpp>
@@ -82,13 +84,13 @@ public:
   HectorMappingRos(rclcpp::NodeOptions options);
 
   void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan);
-  void sysMsgCallback(const std_msgs::msg::String& string);
+  void sysMsgCallback(const std_msgs::msg::String::SharedPtr string);
 
   bool mapCallback(nav_msgs::srv::GetMap::Request& req, nav_msgs::srv::GetMap::Response& res);
 
   void publishMap(MapPublisherContainer& map_, const hectorslam::GridMap& gridMap, rclcpp::Time timestamp, MapLockerInterface* mapMutex = 0);
 
-  bool rosLaserScanToDataContainer(const sensor_msgs::msg::LaserScan& scan, hectorslam::DataContainer& dataContainer, float scaleToMap);
+  bool rosLaserScanToDataContainer(const sensor_msgs::msg::LaserScan::SharedPtr scan, hectorslam::DataContainer& dataContainer, float scaleToMap);
   bool rosPointCloudToDataContainer(const sensor_msgs::msg::PointCloud& pointCloud, const geometry_msgs::msg::TransformStamped& laserTransform,
                                     hectorslam::DataContainer& dataContainer, float scaleToMap);
 /* http://wiki.ros.org/tf2/Tutorials/Migration/DataConversions */
@@ -128,13 +130,17 @@ protected:
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr poseUpdatePublisher_;
   /* rclcpp::Publisher<>::SharedPtr twistUpdatePublisher_; */
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odometryPublisher_;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr scan_point_cloud_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_point_cloud_publisher_;
 
   std::vector<MapPublisherContainer> mapPubContainer;
 
-  tf2_ros::TransformListener     tf_;
+  std::shared_ptr<tf2_ros::Buffer>            tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
+  geometry_msgs::msg::TransformStamped laser_transform_;
+
+  /* std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_; */
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tfB_;
 
   laser_geometry::LaserProjection projector_;
 
@@ -148,7 +154,7 @@ protected:
 
   PoseInfoContainer poseInfoContainer_;
 
-  sensor_msgs::msg::PointCloud laser_point_cloud_;
+  sensor_msgs::msg::PointCloud2 laser_point_cloud_;
 
   rclcpp::Time       lastMapPublishTime;
   rclcpp::Time       lastScanTime;
