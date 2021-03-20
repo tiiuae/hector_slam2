@@ -249,11 +249,13 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
     rclcpp::Duration dur(0.5);
 
     try {
-      laser_transform_ = tf_buffer_->lookupTransform(p_base_frame_, scan->header.frame_id, scan->header.stamp);
+      tf_geom_ = tf_buffer_->lookupTransform(p_base_frame_, scan->header.frame_id, scan->header.stamp);
     }
     catch (tf2::TransformException& ex) {
       RCLCPP_WARN(this->get_logger(), "[HectorMappingRos]: '%s'", ex.what());
     }
+
+    tf2::convert(tf_geom_, laser_transform_);
 
     // projector_.transformLaserScanToPointCloud(p_base_frame_ ,scan, pointCloud,tf_);
     projector_.projectLaser(*scan, laser_point_cloud_, 30.0);
@@ -264,25 +266,25 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
 
     Eigen::Vector3f startEstimate(Eigen::Vector3f::Zero());
 
-    if (rosPointCloudToDataContainer(laser_point_cloud_, laserTransform, laserScanContainer, slamProcessor->getScaleToMap())) {
+    if (rosPointCloudToDataContainer(laser_point_cloud_, laser_transform_, laserScanContainer, slamProcessor->getScaleToMap())) {
       if (initial_pose_set_) {
         initial_pose_set_ = false;
         startEstimate     = initial_pose_;
       } else if (p_use_tf_pose_start_estimate_) {
 
         try {
-          tf::StampedTransform stamped_pose;
+          tf_geom_ = tf_buffer_->lookupTransform(p_map_frame_, p_base_frame_, scan->header.stamp, rclcpp::Duration(0.5));
 
-          tf_.waitForTransform(p_map_frame_, p_base_frame_, scan.header.stamp, ros::Duration(0.5));
-          tf_.lookupTransform(p_map_frame_, p_base_frame_, scan.header.stamp, stamped_pose);
+          tf2::convert(tf_geom_, stamped_pose_);
 
-          tfScalar yaw, pitch, roll;
-          stamped_pose.getBasis().getEulerYPR(yaw, pitch, roll);
 
-          startEstimate = Eigen::Vector3f(stamped_pose.getOrigin().getX(), stamped_pose.getOrigin().getY(), yaw);
+          tf2Scalar yaw, pitch, roll;
+          stamped_pose_.getBasis().getEulerYPR(yaw, pitch, roll);
+
+          startEstimate = Eigen::Vector3f(stamped_pose_.getOrigin().getX(), stamped_pose_.getOrigin().getY(), yaw);
         }
-        catch (tf::TransformException e) {
-          ROS_ERROR("Transform from %s to %s failed\n", p_map_frame_.c_str(), p_base_frame_.c_str());
+        catch (tf2::TransformException& ex) {
+          RCLCPP_ERROR(this->get_logger(),"[HectorMappingRos] Transform from %s to %s failed. Error: %s\n", p_map_frame_.c_str(), p_base_frame_.c_str(), ex.what());
           startEstimate = slamProcessor->getLastScanMatchPose();
         }
 
@@ -307,7 +309,7 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
 
   if (p_timing_output_) {
     rclcpp::Duration duration = rclcpp::Node::now() - startTime;
-    RCLCPP_INFO(this->get_logger(), "HectorSLAM Iter took: %f milliseconds", duration.toSec() * 1000.0f);
+    RCLCPP_INFO(this->get_logger(), "HectorSLAM Iter took: %f milliseconds", duration.seconds() * 1000.0f);
   }
 
   // If we're just building a map with known poses, we're finished now. Code below this point publishes the localization results.
@@ -315,18 +317,18 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
     return;
   }
 
-  poseInfoContainer_.update(slamProcessor->getLastScanMatchPose(), slamProcessor->getLastScanMatchCovariance(), scan.header.stamp, p_map_frame_);
+  poseInfoContainer_.update(slamProcessor->getLastScanMatchPose(), slamProcessor->getLastScanMatchCovariance(), scan->header.stamp, p_map_frame_);
 
-  poseUpdatePublisher_.publish(poseInfoContainer_.getPoseWithCovarianceStamped());
-  posePublisher_.publish(poseInfoContainer_.getPoseStamped());
+  poseUpdatePublisher_->publish(poseInfoContainer_.getPoseWithCovarianceStamped());
+  posePublisher_->publish(poseInfoContainer_.getPoseStamped());
 
   if (p_pub_odometry_) {
-    nav_msgs::Odometry tmp;
+    nav_msgs::msg::Odometry tmp;
     tmp.pose = poseInfoContainer_.getPoseWithCovarianceStamped().pose;
 
     tmp.header         = poseInfoContainer_.getPoseWithCovarianceStamped().header;
     tmp.child_frame_id = p_base_frame_;
-    odometryPublisher_.publish(tmp);
+    odometryPublisher_->publish(tmp);
   }
 
   if (tfB_ == nullptr) {  // initialize with shared_pointer to 'this' Node
@@ -334,17 +336,15 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
   }
 
   if (p_pub_map_odom_transform_) {
-    tf::StampedTransform odom_to_base;
-
     try {
-      tf_.waitForTransform(p_odom_frame_, p_base_frame_, scan.header.stamp, ros::Duration(0.5));
-      tf_.lookupTransform(p_odom_frame_, p_base_frame_, scan.header.stamp, odom_to_base);
+      tf_geom_ = tf_buffer_->lookupTransform(p_odom_frame_, p_base_frame_, scan->header.stamp, rclcpp::Duration(0.5));
+      tf2::convert(tf_geom_, odom_to_base_);
     }
-    catch (tf::TransformException e) {
-      ROS_ERROR("Transform failed during publishing of map_odom transform: %s", e.what());
-      odom_to_base.setIdentity();
+    catch (tf2::TransformException ex) {
+      RCLCPP_ERROR(this->get_logger(),"[HectorMappingRos] Transform failed during publishing of map_odom transform: %s", ex.what());
+      odom_to_base_.setIdentity();
     }
-    map_to_odom_ = tf::Transform(poseInfoContainer_.getTfTransform() * odom_to_base.inverse());
+    map_to_odom_ = tf2::Transform(poseInfoContainer_.getTfTransform() * odom_to_base_.inverse());
     tfB_->sendTransform(tf::StampedTransform(map_to_odom_, scan.header.stamp, p_map_frame_, p_odom_frame_));
   }
 
@@ -434,14 +434,14 @@ bool HectorMappingRos::rosLaserScanToDataContainer(const sensor_msgs::msg::Laser
   return true;
 }
 
-bool HectorMappingRos::rosPointCloudToDataContainer(const sensor_msgs::PointCloud& pointCloud, const tf::StampedTransform& laserTransform,
+bool HectorMappingRos::rosPointCloudToDataContainer(const sensor_msgs::msg::PointCloud2 pointCloud, const tf2::Stamped<tf2::Transform>& laser_transform_,
                                                     hectorslam::DataContainer& dataContainer, float scaleToMap) {
   size_t size = pointCloud.points.size();
   // RCLCPP_INFO(this->get_logger(),"size: %d", size);
 
   dataContainer.clear();
 
-  tf::Vector3 laserPos(laserTransform.getOrigin());
+  tf::Vector3 laserPos(laser_transform_.getOrigin());
   dataContainer.setOrigo(Eigen::Vector2f(laserPos.x(), laserPos.y()) * scaleToMap);
 
   for (size_t i = 0; i < size; ++i) {
@@ -456,7 +456,7 @@ bool HectorMappingRos::rosPointCloudToDataContainer(const sensor_msgs::PointClou
         continue;
       }
 
-      tf::Vector3 pointPosBaseFrame(laserTransform * tf::Vector3(currPoint.x, currPoint.y, currPoint.z));
+      tf::Vector3 pointPosBaseFrame(laser_transform_ * tf::Vector3(currPoint.x, currPoint.y, currPoint.z));
 
       float pointPosLaserFrameZ = pointPosBaseFrame.z() - laserPos.z();
 

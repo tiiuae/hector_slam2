@@ -91,8 +91,7 @@ public:
   void publishMap(MapPublisherContainer& map_, const hectorslam::GridMap& gridMap, rclcpp::Time timestamp, MapLockerInterface* mapMutex = 0);
 
   bool rosLaserScanToDataContainer(const sensor_msgs::msg::LaserScan::SharedPtr scan, hectorslam::DataContainer& dataContainer, float scaleToMap);
-  bool rosPointCloudToDataContainer(const sensor_msgs::msg::PointCloud& pointCloud, const geometry_msgs::msg::TransformStamped& laserTransform,
-                                    hectorslam::DataContainer& dataContainer, float scaleToMap);
+  bool rosPointCloudToDataContainer(const sensor_msgs::msg::PointCloud2 pointCloud, const tf2::Stamped<tf2::Transform>& laser_transform_, hectorslam::DataContainer& dataContainer, float scaleToMap);
 /* http://wiki.ros.org/tf2/Tutorials/Migration/DataConversions */
 
   void setServiceGetMapData(nav_msgs::srv::GetMap::Response& map_, const hectorslam::GridMap& gridMap);
@@ -137,7 +136,14 @@ protected:
   std::shared_ptr<tf2_ros::Buffer>            tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  geometry_msgs::msg::TransformStamped laser_transform_;
+  geometry_msgs::msg::TransformStamped tf_geom_;
+
+  tf2::Stamped<tf2::Transform> laser_transform_;
+  tf2::Stamped<tf2::Transform> stamped_pose_;
+  tf2::Stamped<tf2::Transform> odom_to_base_;
+
+  /* geometry_msgs::msg::TransformStamped laser_transform_; */
+  /* geometry_msgs::msg::TransformStamped stamped_pose_; */
 
   /* std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_; */
   std::shared_ptr<tf2_ros::TransformBroadcaster> tfB_;
