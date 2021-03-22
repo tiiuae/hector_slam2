@@ -249,13 +249,13 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
     rclcpp::Duration dur(0.5);
 
     try {
-      tf_geom_ = tf_buffer_->lookupTransform(p_base_frame_, scan->header.frame_id, scan->header.stamp);
+      tf_geom_laser_transform_ = tf_buffer_->lookupTransform(p_base_frame_, scan->header.frame_id, scan->header.stamp);
     }
     catch (tf2::TransformException& ex) {
       RCLCPP_WARN(this->get_logger(), "[HectorMappingRos]: '%s'", ex.what());
     }
 
-    tf2::convert(tf_geom_, laser_transform_);
+    tf2::convert(tf_geom_laser_transform_, laser_transform_);
 
     // projector_.transformLaserScanToPointCloud(p_base_frame_ ,scan, pointCloud,tf_);
     projector_.projectLaser(*scan, laser_point_cloud_, 30.0);
@@ -273,9 +273,9 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
       } else if (p_use_tf_pose_start_estimate_) {
 
         try {
-          tf_geom_ = tf_buffer_->lookupTransform(p_map_frame_, p_base_frame_, scan->header.stamp, rclcpp::Duration(0.5));
+          tf_geom_stamped_pose_ = tf_buffer_->lookupTransform(p_map_frame_, p_base_frame_, scan->header.stamp, rclcpp::Duration(0.5));
 
-          tf2::convert(tf_geom_, stamped_pose_);
+          tf2::convert(tf_geom_stamped_pose_, stamped_pose_);
 
 
           tf2Scalar yaw, pitch, roll;
@@ -337,26 +337,38 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
 
   if (p_pub_map_odom_transform_) {
     try {
-      tf_geom_ = tf_buffer_->lookupTransform(p_odom_frame_, p_base_frame_, scan->header.stamp, rclcpp::Duration(0.5));
-      tf2::convert(tf_geom_, odom_to_base_);
+      tf_geom_odom_to_base_ = tf_buffer_->lookupTransform(p_odom_frame_, p_base_frame_, scan->header.stamp, rclcpp::Duration(0.5));
+      tf2::convert(tf_geom_odom_to_base_, odom_to_base_);
     }
     catch (tf2::TransformException ex) {
       RCLCPP_ERROR(this->get_logger(),"[HectorMappingRos] Transform failed during publishing of map_odom transform: %s", ex.what());
       odom_to_base_.setIdentity();
     }
     map_to_odom_ = tf2::Transform(poseInfoContainer_.getTfTransform() * odom_to_base_.inverse());
-    tfB_->sendTransform(tf::StampedTransform(map_to_odom_, scan.header.stamp, p_map_frame_, p_odom_frame_));
+
+    tf2::convert(map_to_odom_, tf_geom_.transform);
+    tf_geom_.header = scan->header;
+    tf_geom_.header.frame_id = p_map_frame_;
+    tf_geom_.child_frame_id = p_odom_frame_;
+
+    tfB_->sendTransform(tf_geom_);
   }
 
   if (p_pub_map_scanmatch_transform_) {
-    tfB_->sendTransform(tf::StampedTransform(poseInfoContainer_.getTfTransform(), scan.header.stamp, p_map_frame_, p_tf_map_scanmatch_transform_frame_name_));
+    tf2::convert(poseInfoContainer_.getTfTransform(), tf_geom_.transform);
+    tf_geom_.header = scan->header;
+    tf_geom_.header.frame_id = p_map_frame_;
+    tf_geom_.child_frame_id = p_tf_map_scanmatch_transform_frame_name_;
+
+    tfB_->sendTransform(tf_geom_);
+
   }
 }
 
 void HectorMappingRos::sysMsgCallback(const std_msgs::msg::String::SharedPtr string) {
-  RCLCPP_INFO(this->get_logger(), "HectorSM sysMsgCallback, msg contents: %s", string.data.c_str());
+  RCLCPP_INFO(this->get_logger(), "HectorSM sysMsgCallback, msg contents: %s", string->data.c_str());
 
-  if (string.data == "reset") {
+  if (string->data == "reset") {
     RCLCPP_INFO(this->get_logger(), "HectorSM reset");
     slamProcessor->reset();
   }
@@ -364,7 +376,7 @@ void HectorMappingRos::sysMsgCallback(const std_msgs::msg::String::SharedPtr str
 
 bool HectorMappingRos::mapCallback(const std::shared_ptr<nav_msgs::srv::GetMap::Request> req, std::shared_ptr<nav_msgs::srv::GetMap::Response> res) {
   RCLCPP_INFO(this->get_logger(), "HectorSM Map service called");
-  res = mapPubContainer[0].map_;
+  res = std::make_shared<nav_msgs::srv::GetMap::Response>(mapPubContainer[0].map_);
   return true;
 }
 

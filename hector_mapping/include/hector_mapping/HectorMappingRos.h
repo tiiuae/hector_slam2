@@ -86,7 +86,7 @@ public:
   void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan);
   void sysMsgCallback(const std_msgs::msg::String::SharedPtr string);
 
-  bool mapCallback(nav_msgs::srv::GetMap::Request& req, nav_msgs::srv::GetMap::Response& res);
+  bool mapCallback(nav_msgs::srv::GetMap::Request::SharedPtr req, nav_msgs::srv::GetMap::Response::SharedPtr res);
 
   void publishMap(MapPublisherContainer& map_, const hectorslam::GridMap& gridMap, rclcpp::Time timestamp, MapLockerInterface* mapMutex = 0);
 
@@ -136,6 +136,9 @@ protected:
   std::shared_ptr<tf2_ros::Buffer>            tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
+  geometry_msgs::msg::TransformStamped tf_geom_laser_transform_;
+  geometry_msgs::msg::TransformStamped tf_geom_stamped_pose_;
+  geometry_msgs::msg::TransformStamped tf_geom_odom_to_base_;
   geometry_msgs::msg::TransformStamped tf_geom_;
 
   tf2::Stamped<tf2::Transform> laser_transform_;
@@ -148,9 +151,12 @@ protected:
   /* std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_; */
   std::shared_ptr<tf2_ros::TransformBroadcaster> tfB_;
 
+  tf2::Transform map_to_odom_;
+
+
+
   laser_geometry::LaserProjection projector_;
 
-  tf2::Transform map_to_odom_;
 
   std::unique_ptr<boost::thread> map__publish_thread_;
 
