@@ -74,6 +74,7 @@ class HectorDebugInfoProvider;
 class MapPublisherContainer {
 public:
   MapPublisherContainer();
+
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr mapPublisher_;
   rclcpp::Publisher<nav_msgs::msg::MapMetaData>::SharedPtr   mapMetadataPublisher_;
   nav_msgs::srv::GetMap::Response::SharedPtr                 map_;
@@ -108,6 +109,9 @@ public:
   /*
   void setStaticMapData(const nav_msgs::OccupancyGrid& map);
   */
+
+private:
+
 protected:
   std::shared_ptr<HectorDebugInfoProvider> debugInfoProvider;
   std::shared_ptr<HectorDrawings>          hectorDrawings;
@@ -120,8 +124,8 @@ protected:
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr        sysMsgSubscriber_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mapSubscriber_;
 
-  message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>* initial_pose_sub_;
-  tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>*      initial_pose_filter_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>> initial_pose_sub_;
+  tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>      initial_pose_filter_;
 
   /* ros::Publisher odometryPublisher_; */
   /* ros::Publisher scan_point_cloud_publisher_; */

@@ -47,8 +47,12 @@ using namespace std::placeholders;
 namespace hector_mapping
 {
 
-/*Constructor//{*/
-HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("hector_mapping_ros", options) {
+MapPublisherContainer::MapPublisherContainer(){
+
+}
+
+/* HectorMappingRos//{*/
+HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMappingRos", options) {
 
   std::string mapTopic_ = "map";
 
@@ -115,6 +119,7 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("hector_m
     hectorDrawings = std::make_shared<HectorDrawings>();
   }
 
+
   if (p_pub_debug_output_) {
     RCLCPP_INFO(this->get_logger(), "HectorSM publishing debug info");
     debugInfoProvider = std::make_shared<HectorDebugInfoProvider>();
@@ -152,6 +157,7 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("hector_m
     MapPublisherContainer& tmp = mapPubContainer[i];
     tmp.mapPublisher_	       = this->create_publisher<nav_msgs::msg::OccupancyGrid>(mapTopicStr, 1);
     tmp.mapMetadataPublisher_  = this->create_publisher<nav_msgs::msg::MapMetaData>(mapMetaTopicStr, 1);
+    tmp.map_ = std::make_shared<nav_msgs::srv::GetMap::Response>();
 
     if ((i == 0) && p_advertise_map_service_) {
       tmp.dynamicMapServiceServer_ = this->create_service<nav_msgs::srv::GetMap>("dynamic_map", std::bind(&HectorMappingRos::mapCallback, this, _1, _2));
@@ -161,6 +167,7 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("hector_m
 
     if (i == 0) {
       mapPubContainer[i].mapMetadataPublisher_->publish(mapPubContainer[i].map_->map.info);
+      RCLCPP_INFO(this->get_logger(), "Here8");
     }
   }
 
@@ -200,24 +207,35 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("hector_m
     mapSubscriber_ = node_.subscribe(mapTopic_, 1, &HectorMappingRos::staticMapCallback, this);
   }
   */
+  RCLCPP_INFO(this->get_logger(), "Here 1");
 
-  initial_pose_sub_->subscribe(this, "initialpose");
+  initial_pose_sub_.subscribe(this, "initialpose");
+  /* initial_pose_sub_(message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>(this,"initialpose"); */
+
+  RCLCPP_INFO(this->get_logger(), "Here 2");
   std::chrono::duration<int> sec(1);
-  initial_pose_filter_ = new tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>(*initial_pose_sub_, *tf_buffer_, p_map_frame_, 10,
+  initial_pose_filter_ = new tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>(initial_pose_sub_, *tf_buffer_, p_map_frame_, 10,
 												   this->shared_from_this(), sec);
-  initial_pose_filter_->registerCallback(&HectorMappingRos::initialPoseCallback, this);
+  RCLCPP_INFO(this->get_logger(), "Here 3");
+
+  initial_pose_filter_.registerCallback(std::bind(&HectorMappingRos::initialPoseCallback, this, _1));
+  RCLCPP_INFO(this->get_logger(), "Here 4");
 
   map__publish_thread_ = std::thread(std::bind(&HectorMappingRos::publishMapLoop, this, p_map_pub_period_));
   map__publish_thread_.detach();
+  RCLCPP_INFO(this->get_logger(), "Here 5");
 
   map_to_odom_.setIdentity();
+  RCLCPP_INFO(this->get_logger(), "Here 6");
 
   lastMapPublishTime = rclcpp::Time(0, 0);
 
   // | ---------------------- listener ----------------------- |
+  RCLCPP_INFO(this->get_logger(), "Here 7");
 
   tf_buffer_   = std::make_shared<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this, false);
+  RCLCPP_INFO(this->get_logger(), "Here 8");
 
 } /*//}*/
 
@@ -496,19 +514,26 @@ bool HectorMappingRos::rosPointCloudToDataContainer(const sensor_msgs::msg::Poin
 
 void HectorMappingRos::setServiceGetMapData(nav_msgs::srv::GetMap::Response::SharedPtr map_, const hectorslam::GridMap& gridMap) {
   Eigen::Vector2f mapOrigin(gridMap.getWorldCoords(Eigen::Vector2f::Zero()));
+
+  RCLCPP_INFO(this->get_logger(), "Her1");
   mapOrigin.array() -= gridMap.getCellLength() * 0.5f;
+  RCLCPP_INFO(this->get_logger(), "Her2");
 
   map_->map.info.origin.position.x    = mapOrigin.x();
   map_->map.info.origin.position.y    = mapOrigin.y();
   map_->map.info.origin.orientation.w = 1.0;
+  RCLCPP_INFO(this->get_logger(), "Her3");
 
   map_->map.info.resolution = gridMap.getCellLength();
+  RCLCPP_INFO(this->get_logger(), "Her4");
 
   map_->map.info.width	= gridMap.getSizeX();
   map_->map.info.height = gridMap.getSizeY();
+  RCLCPP_INFO(this->get_logger(), "Her5");
 
   map_->map.header.frame_id = p_map_frame_;
   map_->map.data.resize(map_->map.info.width * map_->map.info.height);
+  RCLCPP_INFO(this->get_logger(), "Her6");
 }
 
 /*

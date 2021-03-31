@@ -9,7 +9,9 @@ endif()
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif()
+
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # add_compile_options(-Wall -Wextra -Wpedantic)
@@ -34,7 +36,8 @@ find_package(Boost REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 ### HEADER INCLUDE
-include_directories(include include/hector_slam_lib ${Boost_INCLUDE_DIRS})
+include_directories(include)
+include_directories(include/hector_slam_lib ${Boost_INCLUDE_DIRS})
 
 ### MESSAGES
 
@@ -74,22 +77,26 @@ rosidl_target_interfaces(HectorMappingRos
   "rosidl_typesupport_cpp"
   )
 
+rclcpp_components_register_nodes(HectorMappingRos "hector_mapping::HectorMappingRos" EXECUTABLE HectorMappingRos)
+
 ### INSTALLATION
 
 install(TARGETS HectorMappingRos
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
-install(DIRECTORY include/hector_slam_lib/
-  DESTINATION include/${PROJECT_NAME}
-  FILES_MATCHING PATTERN "*.h"
-  PATTERN ".svn" EXCLUDE
+install(DIRECTORY include/
+  DESTINATION include
 )
 
 install(DIRECTORY launch/
-  DESTINATION share/${PROJECT_NAME}/launch/
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}
 )
 
 ament_package()
