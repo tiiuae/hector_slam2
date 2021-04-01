@@ -111,7 +111,6 @@ public:
   */
 
 private:
-
 protected:
   std::shared_ptr<HectorDebugInfoProvider> debugInfoProvider;
   std::shared_ptr<HectorDrawings>          hectorDrawings;
@@ -125,7 +124,7 @@ protected:
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mapSubscriber_;
 
   std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>> initial_pose_sub_;
-  tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>      initial_pose_filter_;
+  std::shared_ptr<tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>>      initial_pose_filter_;
 
   /* ros::Publisher odometryPublisher_; */
   /* ros::Publisher scan_point_cloud_publisher_; */
