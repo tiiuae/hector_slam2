@@ -208,21 +208,13 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMa
   */
 
   RCLCPP_INFO(this->get_logger(), "Here 1");
-  initial_pose_sub_->subscribe(this, "initialpose");
-
-  RCLCPP_INFO(this->get_logger(), "Here 2");
-  std::chrono::duration<int> sec(1);
-  /* tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped> tf_filter(*initial_pose_sub_, *tf_buffer_, p_map_frame_, 10,
-   * this->shared_from_this(), sec); */
-  initial_pose_filter_ = std::make_shared<tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>>(*initial_pose_sub_, *tf_buffer_, p_map_frame_,
-                                                                                                                 10, this->shared_from_this(), sec);
-
-  RCLCPP_INFO(this->get_logger(), "Here 3");
-  initial_pose_filter_->registerCallback(&HectorMappingRos::initialPoseCallback, this);
+  init_message_filter_thread_ = std::thread(&HectorMappingRos::initMessageFilter, this);
+  init_message_filter_thread_.detach();
 
   RCLCPP_INFO(this->get_logger(), "Here 4");
   map__publish_thread_ = std::thread(std::bind(&HectorMappingRos::publishMapLoop, this, p_map_pub_period_));
   map__publish_thread_.detach();
+
   RCLCPP_INFO(this->get_logger(), "Here 5");
 
   map_to_odom_.setIdentity();
@@ -237,7 +229,29 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMa
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this, false);
   RCLCPP_INFO(this->get_logger(), "Here 8");
 
+  is_initialized_ = true;
+  RCLCPP_INFO(this->get_logger(), "[%s]: Initialized", this->get_name());
 } /*//}*/
+
+void HectorMappingRos::initMessageFilter(void) {
+  while (rclcpp::ok()) {
+    if (is_initialized_) {
+      message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped> initial_pose_sub_(this, "initialpose");
+      /* initial_pose_sub_ = std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>>(initial_pose_sub_(this, "initialpose")); */
+      /* initial_pose_sub_  = message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped> initial_pose_sub_(this, "initial_pose"); */
+      /* std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>> initial_pose_sub_; */
+      /* initial_pose_sub_ = std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>>(); */
+      std::chrono::duration<int> sec(1);
+      initial_pose_filter_ = std::make_shared<tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>>(
+          initial_pose_sub_, *tf_buffer_, p_map_frame_, 10, this->shared_from_this(), sec);
+
+      RCLCPP_INFO(this->get_logger(), "Here 3");
+      initial_pose_filter_->registerCallback(&HectorMappingRos::initialPoseCallback, this);
+
+      break;
+    }
+  }
+}
 
 /* HectorMappingRos::~HectorMappingRos() { */
 

@@ -111,6 +111,10 @@ public:
   */
 
 private:
+  bool is_initialized_ = false;
+
+  // internal functions
+  void initMessageFilter(void);
 protected:
   std::shared_ptr<HectorDebugInfoProvider> debugInfoProvider;
   std::shared_ptr<HectorDrawings>          hectorDrawings;
@@ -123,7 +127,9 @@ protected:
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr        sysMsgSubscriber_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mapSubscriber_;
 
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>> initial_pose_sub_;
+  /* std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>> initial_pose_sub_; */
+  /* message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped> initial_pose_sub_; */
+  /* TODO:: question how to define it here and then init in the code */ 
   std::shared_ptr<tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>>      initial_pose_filter_;
 
   /* ros::Publisher odometryPublisher_; */
@@ -163,6 +169,8 @@ protected:
 
   /* std::unique_ptr<boost::thread> map__publish_thread_; */
   std::thread map__publish_thread_;
+  std::thread init_message_filter_thread_;
+
 
   std::unique_ptr<hectorslam::HectorSlamProcessor> slamProcessor;
 
