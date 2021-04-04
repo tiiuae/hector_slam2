@@ -113,6 +113,8 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMa
   /* map__publish_thread_ = 0; */
   initial_pose_set_ = false;
 
+  cb_grp_ = this->create_callback_group(rclcpp::callback_group::CallbackGroupType::Reentrant);
+
   if (p_pub_drawings_) {
     RCLCPP_INFO(this->get_logger(), "HectorSM publishing debug drawings");
     hectorDrawings = std::make_shared<HectorDrawings>();
@@ -185,8 +187,10 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMa
   RCLCPP_INFO(this->get_logger(), "HectorSM p_laser_z_min_value_: %f", p_laser_z_min_value_);
   RCLCPP_INFO(this->get_logger(), "HectorSM p_laser_z_max_value_: %f", p_laser_z_max_value_);
 
-  scanSubscriber_   = this->create_subscription<sensor_msgs::msg::LaserScan>(p_scan_topic_, p_scan_subscriber_queue_size_,
-                                                                           std::bind(&HectorMappingRos::scanCallback, this, _1));
+  auto qos = rclcpp::SystemDefaultsQoS();
+  qos.best_effort();
+
+  scanSubscriber_   = this->create_subscription<sensor_msgs::msg::LaserScan>(p_scan_topic_, qos, std::bind(&HectorMappingRos::scanCallback, this, _1));
   sysMsgSubscriber_ = this->create_subscription<std_msgs::msg::String>(p_sys_msg_topic_, 2, std::bind(&HectorMappingRos::sysMsgCallback, this, _1));
 
   poseUpdatePublisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(p_pose_update_topic_, 1);

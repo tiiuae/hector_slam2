@@ -157,6 +157,8 @@ protected:
   tf2::Stamped<tf2::Transform> stamped_pose_;
   tf2::Stamped<tf2::Transform> odom_to_base_;
 
+  rclcpp::callback_group::CallbackGroup::SharedPtr cb_grp_;
+
   /* geometry_msgs::msg::TransformStamped laser_transform_; */
   /* geometry_msgs::msg::TransformStamped stamped_pose_; */
 
