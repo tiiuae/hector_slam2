@@ -13,13 +13,15 @@ def generate_launch_description():
     pkg_name = "hector_mapping"
     pkg_share_path = get_package_share_directory(pkg_name)
 
+    ld.add_action(launch.actions.DeclareLaunchArgument("use_sim_time", default_value="false"))
+
     UAV_TYPE=os.getenv('UAV_TYPE')
     UAV_NAME=os.getenv('UAV_NAME')
 
     namespace=UAV_NAME
     ld.add_action(ComposableNodeContainer(
         namespace='',
-        name=namespace+'_hector',
+        name=namespace+'_hector_mapping',
         package='rclcpp_components',
         executable='component_container_mt',
         # prefix=['xterm -e gdb -ex run --args'],
@@ -28,15 +30,16 @@ def generate_launch_description():
                 package=pkg_name,
                 plugin='hector_mapping::HectorMappingRos',
                 namespace=namespace,
-                name='hector',
+                name='hector_mapping',
 
                 parameters=[
                     pkg_share_path + '/config/params.yaml',
                     {"tf_map_scanmatch_transform_f": UAV_NAME+"/scanmatcher_frame"},
-                    {"map_frame": UAV_NAME+"/hector_map"},
-                    {"base_frame": UAV_NAME+"/fcu_untilted"},
-                    {"odom_frame": UAV_NAME+"/fcu"},
-                    {"scan_topic": UAV_NAME+"/rplidar/scan"},
+                    {"map_frame": "hector_map"},
+                    {"base_frame": "fcu"},
+                    {"odom_frame": "local_odom"},
+                    {"scan_topic": "/uav1/rplidar/scan"},
+                    {"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},
                 ],
                 # remappings=[
                 #     # topics
@@ -45,8 +48,9 @@ def generate_launch_description():
             ),
         ],
         output='screen',
-        emulate_tty=True,
-        arguments=[('__log_level:=debug')]
+        # emulate_tty=True,
+        # arguments=[('__log_level:=debug')],
+        parameters=[{"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},],
     ))
 
     return ld

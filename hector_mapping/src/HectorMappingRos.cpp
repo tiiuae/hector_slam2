@@ -269,6 +269,8 @@ void HectorMappingRos::initMessageFilter(void) {
 /* } */
 
 void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) {
+  RCLCPP_INFO(this->get_logger(), "Scan incoming");
+
   if (hectorDrawings) {
     hectorDrawings->setTime(scan->header.stamp);
   }
@@ -391,7 +393,9 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
     map_to_odom_ = tf2::Transform(poseInfoContainer_.getTfTransform() * odom_to_base_.inverse());
 
     /* tf2::convert(map_to_odom_, tf_geom_.transform); */
-    tf2::fromMsg(map_to_odom_, tf_geom_.transform);
+    RCLCPP_INFO(this->get_logger(), "FromMsg1");
+    /* tf2::fromMsg(map_to_odom_, tf_geom_.transform); */
+    tf_geom_.transform = tf2::toMsg(map_to_odom_);
     tf_geom_.header          = scan->header;
     tf_geom_.header.frame_id = p_map_frame_;
     tf_geom_.child_frame_id  = p_odom_frame_;
@@ -400,7 +404,9 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
   }
 
   if (p_pub_map_scanmatch_transform_) {
-    tf2::fromMsg(poseInfoContainer_.getTfTransform(), tf_geom_.transform);
+    RCLCPP_INFO(this->get_logger(), "FromMsg2");
+    /* tf2::fromMsg(poseInfoContainer_.getTfTransform(), tf_geom_.transform); */
+    tf_geom_.transform = tf2::toMsg(poseInfoContainer_.getTfTransform());
     tf_geom_.header          = scan->header;
     tf_geom_.header.frame_id = p_map_frame_;
     tf_geom_.child_frame_id  = p_tf_map_scanmatch_transform_frame_name_;
@@ -591,7 +597,9 @@ void HectorMappingRos::initialPoseCallback(const geometry_msgs::msg::PoseWithCov
   initial_pose_set_ = true;  // TODO: This should be set after setting the value, shouldnt it?
 
   tf2::Transform pose;
-  tf2::fromMsg(msg, pose);
+  RCLCPP_INFO(this->get_logger(), "FromMsg3");
+  tf2::fromMsg(msg->pose.pose, pose); //Zmenil jsem to na geometry_msgs/Pose
+
   tf2::Matrix3x3 m(pose.getRotation());
   double         roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);

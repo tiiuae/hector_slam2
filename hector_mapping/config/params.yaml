@@ -28,8 +28,8 @@ advertise_map_service: true
 scan_subscriber_queue_size: 5
 
 # Debug parameters
-# output_timing: false
-# pub_drawings: true
-# pub_debug_output: true
+output_timing: true
+pub_drawings: false
+pub_debug_output: false
 
 

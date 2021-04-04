@@ -46,10 +46,12 @@
 #include <rclcpp/subscription.hpp>
 #include <rclcpp/subscription_base.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <tf2/convert.h>
 #include <tf2_ros/message_filter.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/buffer.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>  // This has to be here otherwise you will get cryptic linker error about missing function 'getTimestamp'
 
 #include <laser_geometry/laser_geometry.hpp>
 #include <nav_msgs/srv/get_map.hpp>
