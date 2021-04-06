@@ -117,22 +117,18 @@ private:
 
   // internal functions
   void initMessageFilter(void);
+
 protected:
   std::shared_ptr<HectorDebugInfoProvider> debugInfoProvider;
   std::shared_ptr<HectorDrawings>          hectorDrawings;
 
   int lastGetMapUpdateIndex;
 
-  /* ros::NodeHandle node_; */
-
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr  scanSubscriber_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr        sysMsgSubscriber_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mapSubscriber_;
 
-  /* std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>> initial_pose_sub_; */
-  /* message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped> initial_pose_sub_; */
-  /* TODO:: question how to define it here and then init in the code */ 
-  std::shared_ptr<tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>>      initial_pose_filter_;
+  std::shared_ptr<tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>> initial_pose_filter_;
 
   /* ros::Publisher odometryPublisher_; */
   /* ros::Publisher scan_point_cloud_publisher_; */
@@ -159,22 +155,14 @@ protected:
 
   rclcpp::callback_group::CallbackGroup::SharedPtr cb_grp_;
 
-  /* geometry_msgs::msg::TransformStamped laser_transform_; */
-  /* geometry_msgs::msg::TransformStamped stamped_pose_; */
-
-  /* std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_; */
   std::shared_ptr<tf2_ros::TransformBroadcaster> tfB_;
 
   tf2::Transform map_to_odom_;
 
-
   laser_geometry::LaserProjection projector_;
 
-
-  /* std::unique_ptr<boost::thread> map__publish_thread_; */
   std::thread map__publish_thread_;
   std::thread init_message_filter_thread_;
-
 
   std::unique_ptr<hectorslam::HectorSlamProcessor> slamProcessor;
 
@@ -234,7 +222,6 @@ protected:
   bool p_use_tf_pose_start_estimate_;
   bool p_map_with_known_poses_;
   bool p_timing_output_;
-
 
   float p_sqr_laser_min_dist_;
   float p_sqr_laser_max_dist_;
