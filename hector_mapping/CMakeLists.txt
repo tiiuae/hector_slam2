@@ -28,10 +28,10 @@ find_package(message_filters REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
-find_package(eigen3_cmake_module REQUIRED)
-find_package(Eigen3)
+find_package(Eigen3 REQUIRED)
+set(Eigen_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS})
+set(Eigen_LIBRARIES ${EIGEN3_LIBRARIES})
 find_package(Boost REQUIRED)
-# find_package(Boost REQUIRED COMPONENTS thread)
 
 find_package(rosidl_default_generators REQUIRED)
 
@@ -51,15 +51,12 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 
 add_library(HectorMappingRos SHARED
   src/HectorMappingRos.cpp
-  # src/main.cpp
   src/PoseInfoContainer.cpp
 )
 
 ament_export_include_directories(include)
 ament_export_libraries(HectorMappingRos)
-ament_export_dependencies(rclcpp nav_msgs visualization_msgs tf2 tf2_ros message_filters laser_geometry eigen3_cmake_module sensor_msgs)
-ament_export_dependencies(Eigen3)
-# add_dependencies(HectorMappingRos hector_mapping_generate_messages_cpp)
+ament_export_dependencies(rclcpp nav_msgs visualization_msgs tf2 tf2_ros message_filters laser_geometry sensor_msgs)
 ament_target_dependencies(HectorMappingRos
   rclcpp
   nav_msgs
@@ -70,7 +67,8 @@ ament_target_dependencies(HectorMappingRos
   laser_geometry
   sensor_msgs
 )
-target_link_libraries(HectorMappingRos ${Boost_LIBRARIES} ${Eigen3_LIBRARIES})
+
+target_link_libraries(HectorMappingRos)
 
 rosidl_target_interfaces(HectorMappingRos
   ${PROJECT_NAME}
