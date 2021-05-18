@@ -1,7 +1,8 @@
 # TF use
 use_tf_scan_transformation: true
 use_tf_pose_start_estimate: false
-pub_map_odom_transform: true
+pub_map_odom_transform: false
+pub_map_scanmatch_transform: false
 
 # Map size/ start point
 map_resolution: 0.04

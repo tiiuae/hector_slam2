@@ -35,7 +35,7 @@ def generate_launch_description():
                 parameters=[
                     pkg_share_path + '/config/params.yaml',
                     {"tf_map_scanmatch_transform_f": UAV_NAME+"/scanmatcher_frame"},
-                    {"map_frame": "hector_map"},
+                    {"map_frame": "hector_origin"},
                     {"base_frame": "fcu"},
                     {"odom_frame": "local_odom"},
                     {"scan_topic": "/uav1/rplidar/scan"},
