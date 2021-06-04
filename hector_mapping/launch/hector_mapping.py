@@ -15,10 +15,9 @@ def generate_launch_description():
 
     ld.add_action(launch.actions.DeclareLaunchArgument("use_sim_time", default_value="false"))
 
-    UAV_TYPE=os.getenv('UAV_TYPE')
-    UAV_NAME=os.getenv('UAV_NAME')
+    DRONE_DEVICE_ID=os.getenv('DRONE_DEVICE_ID')
 
-    namespace=UAV_NAME
+    namespace=DRONE_DEVICE_ID
     ld.add_action(ComposableNodeContainer(
         namespace='',
         name=namespace+'_hector_mapping',
@@ -34,11 +33,11 @@ def generate_launch_description():
 
                 parameters=[
                     pkg_share_path + '/config/params.yaml',
-                    {"tf_map_scanmatch_transform_f": UAV_NAME+"/scanmatcher_frame"},
-                    {"map_frame": "hector_origin"},
-                    {"base_frame": "fcu"},
-                    {"odom_frame": "local_odom"},
-                    {"scan_topic": "/uav1/rplidar/scan"},
+                    {"tf_map_scanmatch_transform_f": DRONE_DEVICE_ID+"/scanmatcher_frame"},
+                    {"map_frame": DRONE_DEVICE_ID + "/hector_origin"},
+                    {"base_frame": DRONE_DEVICE_ID + "/fcu"},
+                    {"odom_frame": DRONE_DEVICE_ID + "/ned_fcu"},
+                    {"scan_topic": "/"+DRONE_DEVICE_ID+"/rplidar/scan"},
                     {"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},
                 ],
                 # remappings=[
