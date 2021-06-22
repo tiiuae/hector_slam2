@@ -267,7 +267,7 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
     hectorDrawings->setTime(scan->header.stamp);
   }
 
-  auto start_time = std::chrono::system_clock::now();
+  auto start_time = this->get_clock()->now();
 
   // If we are not using the tf tree to find the transform between the base frame and laser frame,
   // then just convert the laser scan to our data container and process the update based on our last
@@ -337,8 +337,9 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
   }
 
   if (p_timing_output_) {
-    std::chrono::duration<double> diff = std::chrono::system_clock::now() - start_time;
-    RCLCPP_INFO(this->get_logger(), "HectorSLAM Iter took: %f milliseconds", diff.count() * 1000.0);
+
+    double diff = (this->get_clock()->now() - start_time).nanoseconds();
+    RCLCPP_INFO(this->get_logger(), "HectorSLAM Iter took: %f milliseconds", diff * 1000.0);
   }
 
   // If we're just building a map with known poses, we're finished now. Code below this point publishes the localization results.
