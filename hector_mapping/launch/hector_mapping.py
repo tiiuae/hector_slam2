@@ -22,7 +22,7 @@ def generate_launch_description():
         namespace='',
         name=namespace+'_hector_mapping',
         package='rclcpp_components',
-        executable='component_container_mt',
+        executable='component_container',
         # prefix=['xterm -e gdb -ex run --args'],
         composable_node_descriptions=[
             ComposableNode(
