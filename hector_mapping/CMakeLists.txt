@@ -1,17 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(hector_mapping)
 
-# Default to C99
-if(NOT CMAKE_C_STANDARD)
-  set(CMAKE_C_STANDARD 99)
-endif()
-
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-endif()
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -20,11 +9,6 @@ add_definitions("-Wextra")
 add_definitions("-Wpedantic")
 add_definitions("-g")
 add_definitions("-O3") # because normal release is just -O2
-
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  # add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -45,8 +29,11 @@ find_package(Boost REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 ### HEADER INCLUDE
-include_directories(include)
-include_directories(include/hector_slam_lib ${Boost_INCLUDE_DIRS})
+include_directories(
+  include
+  include/hector_slam_lib
+  ${Boost_INCLUDE_DIRS}
+  )
 
 ### MESSAGES
 
