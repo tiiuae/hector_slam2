@@ -32,7 +32,7 @@ def generate_launch_description():
                 name='hector_mapping',
 
                 parameters=[
-                    pkg_share_path + '/config/params.yaml',
+                    pkg_share_path + '/config/real.yaml',
                     {"tf_map_scanmatch_transform_f": DRONE_DEVICE_ID+"/scanmatcher_frame"},
                     {"map_frame": DRONE_DEVICE_ID + "/hector_origin"},
                     {"base_frame": DRONE_DEVICE_ID + "/fcu"},

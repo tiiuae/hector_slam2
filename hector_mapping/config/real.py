@@ -5,9 +5,8 @@ pub_map_odom_transform: false
 pub_map_scanmatch_transform: false
 
 # Map size/ start point
-map_resolution: 0.04
-# map_size: 2048 # ~82m
-map_size: 4096 # ~164m
+map_resolution: 0.05
+map_size: 1024 # ~164m
 map_start_x: 0.5
 map_start_y: 0.5
 map_multi_res_levels: 3
