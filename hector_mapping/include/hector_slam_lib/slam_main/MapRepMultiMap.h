@@ -80,13 +80,16 @@ public:
     }
   }
 
-  virtual void reset()
+  virtual bool reset()
   {
     unsigned int size = mapContainer.size();
 
     for (unsigned int i = 0; i < size; ++i){
-      mapContainer[i].reset();
+      if (!mapContainer[i].reset()) {
+        return false;
+      }
     }
+    return true;
   }
 
   virtual float getScaleToMap() const { return mapContainer[0].getScaleToMap(); };

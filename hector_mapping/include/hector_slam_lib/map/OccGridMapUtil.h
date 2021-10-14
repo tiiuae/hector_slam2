@@ -356,9 +356,9 @@ public:
     return Eigen::Translation2f(transVector[0], transVector[1]);
   }
 
-  void resetCachedData()
+  bool resetCachedData()
   {
-    cacheMethod.resetCache();
+    return cacheMethod.resetCache();
   }
 
   void resetSamplePoints()

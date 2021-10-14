@@ -112,7 +112,7 @@ public:
     }
   }
 
-  void reset()
+bool reset()
   {
     lastMapUpdatePose = Eigen::Vector3f(FLT_MAX, FLT_MAX, FLT_MAX);
     lastScanMatchPose = Eigen::Vector3f::Zero();
@@ -120,7 +120,7 @@ public:
     //lastScanMatchPose.y() = -15.0f;
     //lastScanMatchPose.z() = M_PI*0.15f;
 
-    mapRep->reset();
+    return mapRep->reset();
   }
 
   const Eigen::Vector3f& getLastScanMatchPose() const { return lastScanMatchPose; };

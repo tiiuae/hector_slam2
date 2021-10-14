@@ -66,21 +66,23 @@ public:
     return mapDimensionProperties.pointOutOfMapBounds(pointMapCoords);
   }
 
-  virtual void reset()
+  virtual bool reset()
   {
-    this->clear();
+    return this->clear();
   }
 
   /**
    * Resets the grid cell values by using the resetGridCell() function.
    */
-  void clear()
+  bool clear()
   {
     int size = this->getSizeX() * this->getSizeY();
 
     for (int i = 0; i < size; ++i) {
       this->mapArray[i].resetGridCell();
     }
+    return true;
+
 
     //this->mapArray[0].set(1.0f);
     //this->mapArray[size-1].set(1.0f);

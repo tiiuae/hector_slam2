@@ -64,15 +64,14 @@ public:
     }
   }
 
-  void reset()
+  bool reset()
   {
-    gridMap->reset();
-    gridMapUtil->resetCachedData();
+    return gridMap->reset() && gridMapUtil->resetCachedData();
   }
 
-  void resetCachedData()
+  bool resetCachedData()
   {
-    gridMapUtil->resetCachedData();
+    return gridMapUtil->resetCachedData();
   }
 
   float getScaleToMap() const { return gridMap->getScaleToMap(); };

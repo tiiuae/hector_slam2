@@ -128,7 +128,7 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMa
   }
 
   if (p_pub_odometry_) {
-    odometryPublisher_ = this->create_publisher<nav_msgs::msg::Odometry>("scanmatch_odom", 50);
+    odometryPublisher_ = this->create_publisher<nav_msgs::msg::Odometry>("~/scanmatch_odom", 50);
   }
 
   slamProcessor = std::make_unique<hectorslam::HectorSlamProcessor>(static_cast<float>(p_map_resolution_), p_map_size_, p_map_size_,
@@ -158,8 +158,8 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMa
     mapMetaTopicStr.append("_metadata");
 
     MapPublisherContainer& tmp = mapPubContainer[i];
-    tmp.mapPublisher_          = this->create_publisher<nav_msgs::msg::OccupancyGrid>(mapTopicStr, 1);
-    tmp.mapMetadataPublisher_  = this->create_publisher<nav_msgs::msg::MapMetaData>(mapMetaTopicStr, 1);
+    tmp.mapPublisher_          = this->create_publisher<nav_msgs::msg::OccupancyGrid>("~/"+mapTopicStr, 1);
+    tmp.mapMetadataPublisher_  = this->create_publisher<nav_msgs::msg::MapMetaData>("~/"+mapMetaTopicStr, 1);
     tmp.map_                   = std::make_shared<nav_msgs::srv::GetMap::Response>();
 
     if ((i == 0) && p_advertise_map_service_) {
@@ -189,13 +189,15 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMa
   RCLCPP_INFO(this->get_logger(), "HectorSM p_laser_z_min_value_: %f", p_laser_z_min_value_);
   RCLCPP_INFO(this->get_logger(), "HectorSM p_laser_z_max_value_: %f", p_laser_z_max_value_);
 
-  scanSubscriber_   = this->create_subscription<sensor_msgs::msg::LaserScan>(p_scan_topic_, rclcpp::SystemDefaultsQoS(), std::bind(&HectorMappingRos::scanCallback, this, _1));
-  sysMsgSubscriber_ = this->create_subscription<std_msgs::msg::String>(p_sys_msg_topic_, rclcpp::SystemDefaultsQoS(), std::bind(&HectorMappingRos::sysMsgCallback, this, _1));
+  scanSubscriber_ =
+      this->create_subscription<sensor_msgs::msg::LaserScan>(p_scan_topic_, rclcpp::SystemDefaultsQoS(), std::bind(&HectorMappingRos::scanCallback, this, _1));
 
-  poseUpdatePublisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(p_pose_update_topic_, 1);
-  posePublisher_       = this->create_publisher<geometry_msgs::msg::PoseStamped>("slam_out_pose", 1);
+  poseUpdatePublisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("~/"+p_pose_update_topic_, 1);
+  posePublisher_       = this->create_publisher<geometry_msgs::msg::PoseStamped>("~/slam_out_pose", 1);
 
-  scan_point_cloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud>("slam_cloud", 1);
+  scan_point_cloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud>("~/slam_cloud", 1);
+
+  reset_hector_service_ = this->create_service<std_srvs::srv::Trigger>("~/reset_hector", std::bind(&HectorMappingRos::resetHectorCallback, this, _1, _2));
 
   tfB_ = nullptr;
 
@@ -259,6 +261,30 @@ void HectorMappingRos::initMessageFilter(void) {
 /*   /1*   delete map__publish_thread_; *1/ */
 /* } */
 
+/* resetHectorCallback //{ */
+bool HectorMappingRos::resetHectorCallback(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+                                           std::shared_ptr<std_srvs::srv::Trigger::Response>      response) {
+  if (!is_initialized_) {
+    response->message = "ROS not initialized";
+    response->success = false;
+    return true;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "[%s]: Resetting hector map reset", this->get_name());
+
+
+  std::scoped_lock lock(mutex_slam_processor_);
+  if (slamProcessor->reset()) {
+    response->message = "Hector reset successfull";
+    response->success = true;
+  } else {
+    response->message = "Hector reset failed";
+    response->success = false;
+  }
+  return true;
+}
+//}
+
 /* scanCallback//{*/
 void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) {
   if (hectorDrawings) {
@@ -266,6 +292,8 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
   }
 
   auto start_time = std::chrono::system_clock::now();
+
+  std::scoped_lock lock(mutex_slam_processor_);
 
   // If we are not using the tf tree to find the transform between the base frame and laser frame,
   // then just convert the laser scan to our data container and process the update based on our last
@@ -390,16 +418,6 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
     tf_geom_.child_frame_id  = p_tf_map_scanmatch_transform_frame_name_;
 
     tfB_->sendTransform(tf_geom_);
-  }
-} /*//}*/
-
-/* sysMsgCallback//{*/
-void HectorMappingRos::sysMsgCallback(const std_msgs::msg::String::SharedPtr string) {
-  RCLCPP_INFO(this->get_logger(), "HectorSM sysMsgCallback, msg contents: %s", string->data.c_str());
-
-  if (string->data == "reset") {
-    RCLCPP_INFO(this->get_logger(), "HectorSM reset");
-    slamProcessor->reset();
   }
 } /*//}*/
 
@@ -557,8 +575,10 @@ void HectorMappingRos::publishMapLoop(double map_pub_period) {
     rclcpp::Time mapTime(rclcpp::Node::now());
     // publishMap(mapPubContainer[2],slamProcessor->getGridMap(2), mapTime);
     // publishMap(mapPubContainer[1],slamProcessor->getGridMap(1), mapTime);
-    publishMap(mapPubContainer[0], slamProcessor->getGridMap(0), mapTime, slamProcessor->getMapMutex(0));
-
+    {
+      std::scoped_lock lock(mutex_slam_processor_);
+      publishMap(mapPubContainer[0], slamProcessor->getGridMap(0), mapTime, slamProcessor->getMapMutex(0));
+    }
     // ros::WallDuration t2 = ros::WallTime::now() - t1;
 
     // std::cout << "time s: " << t2.toSec();

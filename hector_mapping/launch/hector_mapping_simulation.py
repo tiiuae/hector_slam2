@@ -46,10 +46,9 @@ def generate_launch_description():
                     {"scan_topic": "/"+DRONE_DEVICE_ID+"/rplidar/scan"},
                     {"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},
                 ],
-                # remappings=[
-                #     # topics
-                #     ("~/topic_out", "~/topic"),
-                # ],
+                remappings=[
+                    ("~/reset_hector", "~/reset_hector"),
+                ],
             ),
         ],
         output='screen',

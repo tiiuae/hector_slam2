@@ -66,9 +66,10 @@ public:
   /**
    * Resets/deletes the cached data
    */
-  void resetCache()
+  bool resetCache()
   {
     currCacheIndex++;
+    return true;
   }
 
   /**

@@ -46,6 +46,7 @@
 #include <rclcpp/subscription.hpp>
 #include <rclcpp/subscription_base.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <tf2/convert.h>
 #include <tf2_ros/message_filter.h>
 #include <tf2_ros/transform_listener.h>
@@ -91,6 +92,9 @@ public:
   void sysMsgCallback(const std_msgs::msg::String::SharedPtr string);
 
   bool mapCallback(nav_msgs::srv::GetMap::Request::SharedPtr req, nav_msgs::srv::GetMap::Response::SharedPtr res);
+
+  // service callback
+  bool resetHectorCallback(const std::shared_ptr<std_srvs::srv::Trigger::Request> request, std::shared_ptr<std_srvs::srv::Trigger::Response> response);
 
   void publishMap(MapPublisherContainer& map_, const hectorslam::GridMap& gridMap, rclcpp::Time timestamp, MapLockerInterface* mapMutex = 0);
 
@@ -139,6 +143,9 @@ protected:
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr      odometryPublisher_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr scan_point_cloud_publisher_;
 
+  // service provided
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_hector_service_;
+
   std::vector<MapPublisherContainer> mapPubContainer;
 
   std::shared_ptr<tf2_ros::Buffer>            tf_buffer_;
@@ -183,6 +190,8 @@ protected:
 
   //-----------------------------------------------------------
   // Parameters
+
+  std::mutex mutex_slam_processor_;
 
   std::string p_base_frame_;
   std::string p_map_frame_;

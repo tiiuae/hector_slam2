@@ -14,6 +14,7 @@ add_definitions("-O3") # because normal release is just -O2
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -56,6 +57,7 @@ ament_export_dependencies(rclcpp nav_msgs visualization_msgs tf2 tf2_ros message
 ament_target_dependencies(HectorMappingRos
   rclcpp
   nav_msgs
+  std_srvs
   visualization_msgs
   tf2
   tf2_ros
