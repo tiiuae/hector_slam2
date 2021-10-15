@@ -36,6 +36,8 @@
 #include "../util/DrawInterface.h"
 #include "../util/HectorDebugInfoInterface.h"
 
+#include <math.h>
+
 namespace hectorslam
 {
 
@@ -51,6 +53,9 @@ public:
 
   Eigen::Vector3f matchData(const Eigen::Vector3f& beginEstimateWorld, ConcreteOccGridMapUtil& gridMapUtil, const DataContainer& dataContainer,
                             Eigen::Matrix3f& covMatrix, int maxIterations) {
+    if (!isfinite(beginEstimateWorld(0))) {
+      int test = 0;
+    }
     if (drawInterface) {
       drawInterface->setScale(0.05f);
       drawInterface->setColor(0.0f, 1.0f, 0.0f);
@@ -69,7 +74,10 @@ public:
 
       Eigen::Vector3f estimate(beginEstimateMap);
 
-      estimateTransformationLogLh(estimate, gridMapUtil, dataContainer);
+      // Check if the estimate hessian inverse is nan, if yes return the original estimate
+      if (!estimateTransformationLogLh(estimate, gridMapUtil, dataContainer)) {
+        return beginEstimateWorld;
+      }
       // bool notConverged = estimateTransformationLogLh(estimate, gridMapUtil, dataContainer);
 
       /*
@@ -92,7 +100,14 @@ public:
       for (int i = 0; i < numIter; ++i) {
         // std::cout << "\nest:\n" << estimate;
 
-        estimateTransformationLogLh(estimate, gridMapUtil, dataContainer);
+        //Check if the hessian is nan, return the previous estimate
+        if (estimateTransformationLogLh(estimate, gridMapUtil, dataContainer)) {
+          return gridMapUtil.getWorldCoordsPose(estimate);
+        }
+
+        if (!isfinite(estimate[0])) {
+          int test = 0;
+        }
         // notConverged = estimateTransformationLogLh(estimate, gridMapUtil, dataContainer);
 
         if (drawInterface) {
@@ -180,6 +195,10 @@ public:
 
       covMatrix = H;
 
+      if (!isfinite(estimate[0])) {
+        int test = 0;
+      }
+
       return gridMapUtil.getWorldCoordsPose(estimate);
     }
 
@@ -188,7 +207,13 @@ public:
 
 protected:
   bool estimateTransformationLogLh(Eigen::Vector3f& estimate, ConcreteOccGridMapUtil& gridMapUtil, const DataContainer& dataPoints) {
+    if (!isfinite(estimate[0])) {
+      int test = 0;
+    }
     gridMapUtil.getCompleteHessianDerivs(estimate, dataPoints, H, dTr);
+    if (!isfinite(estimate[0])) {
+      int test = 0;
+    }
     // std::cout << "\nH\n" << H  << "\n";
     // std::cout << "\ndTr\n" << dTr  << "\n";
 
@@ -198,6 +223,10 @@ protected:
 
       // H += Eigen::Matrix3f::Identity() * 1.0f;
       Eigen::Vector3f searchDir(H.inverse() * dTr);
+      if (!isfinite(searchDir[0])) {
+        std::cout << "searchDir NaN"  << "\n";
+        return false;
+      }
 
       // std::cout << "\nsearchdir\n" << searchDir  << "\n";
 
@@ -210,6 +239,9 @@ protected:
       }
 
       updateEstimatedPose(estimate, searchDir);
+      if (!isfinite(estimate[0])) {
+        int test = 0;
+      }
       return true;
     }
     return false;
@@ -235,7 +267,7 @@ protected:
   Eigen::Vector3f dTr;
   Eigen::Matrix3f H;
 
-  std::shared_ptr<DrawInterface> drawInterface;
+  std::shared_ptr<DrawInterface>            drawInterface;
   std::shared_ptr<HectorDebugInfoInterface> debugInterface;
 };
 
