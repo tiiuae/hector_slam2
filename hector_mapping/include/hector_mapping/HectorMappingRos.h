@@ -117,7 +117,7 @@ public:
   */
 
 private:
-  bool is_initialized_ = false;
+  std::atomic_bool is_initialized_ = false;
 
   // internal functions
   void initMessageFilter(void);
