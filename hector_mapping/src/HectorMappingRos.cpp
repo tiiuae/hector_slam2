@@ -294,7 +294,7 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
     hectorDrawings->setTime(scan->header.stamp);
   }
 
-  auto start_time = std::chrono::system_clock::now();
+  auto start_time = std::chrono::high_resolution_clock::now();
 
   std::scoped_lock lock(mutex_slam_processor_);
 
@@ -367,8 +367,10 @@ void HectorMappingRos::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr
 
   if (p_timing_output_) {
 
-    std::chrono::duration<double> dt = std::chrono::system_clock::now() - start_time;
-    RCLCPP_INFO(this->get_logger(), "HectorSLAM Iter took: %f milliseconds", dt.count() * 1000.0);
+    auto end_time = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double, std::milli> dur_ms = end_time - start_time;
+    RCLCPP_INFO(this->get_logger(), "HectorSLAM Iter took: %f milliseconds", dur_ms.count());
   }
 
   // If we're just building a map with known poses, we're finished now. Code below this point publishes the localization results.
@@ -591,11 +593,7 @@ void HectorMappingRos::publishMapLoop(double map_pub_period) {
       // publishMap(mapPubContainer[2],slamProcessor->getGridMap(2), mapTime);
       // publishMap(mapPubContainer[1],slamProcessor->getGridMap(1), mapTime);
 
-      // TODO: zkopirovat promennou a mutexovat jenom na kratkou chvili
-      {
-        std::scoped_lock lock(mutex_slam_processor_);
-        publishMap(mapPubContainer[0], slamProcessor->getGridMap(0), mapTime, slamProcessor->getMapMutex(0));
-      }
+      publishMap(mapPubContainer[0], slamProcessor->getGridMap(0), mapTime, slamProcessor->getMapMutex(0));
       // ros::WallDuration t2 = ros::WallTime::now() - t1;
 
       // std::cout << "time s: " << t2.toSec();

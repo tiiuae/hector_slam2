@@ -7,8 +7,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_definitions("-Wall")
 add_definitions("-Wextra")
 add_definitions("-Wpedantic")
-# add_definitions("-g")
-# add_definitions("-ggdb")
+add_definitions("-g")
+add_definitions("-ggdb")
 add_definitions("-O3") # because normal release is just -O2
 
 # find dependencies
