@@ -160,7 +160,7 @@ protected:
   tf2::Stamped<tf2::Transform> stamped_pose_;
   tf2::Stamped<tf2::Transform> odom_to_base_;
 
-  rclcpp::callback_group::CallbackGroup::SharedPtr cb_grp_;
+  rclcpp::CallbackGroup::CallbackGroup::SharedPtr cb_grp_;
 
   std::shared_ptr<tf2_ros::TransformBroadcaster> tfB_;
 

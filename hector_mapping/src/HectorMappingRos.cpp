@@ -114,7 +114,7 @@ HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMa
   lastGetMapUpdateIndex = 100;
   initial_pose_set_     = false;
 
-  cb_grp_ = this->create_callback_group(rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
+  cb_grp_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
   if (p_pub_drawings_) {
     RCLCPP_INFO(this->get_logger(), "HectorSM publishing debug drawings");
