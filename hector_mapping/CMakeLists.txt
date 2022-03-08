@@ -22,6 +22,7 @@ find_package(tf2_ros REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(fog_lib REQUIRED)
 
 find_package(Eigen3 REQUIRED)
 set(Eigen_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS})
@@ -65,6 +66,7 @@ ament_target_dependencies(HectorMappingRos
   message_filters
   laser_geometry
   sensor_msgs
+  fog_lib
 )
 
 target_link_libraries(HectorMappingRos)

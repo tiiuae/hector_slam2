@@ -39,11 +39,13 @@ def generate_launch_description():
 
                 parameters=[
                     pkg_share_path + '/config/simulation.yaml',
-                    {"tf_map_scanmatch_transform_f": DRONE_DEVICE_ID+"/scanmatcher_frame"},
                     {"map_frame": DRONE_DEVICE_ID + "/hector_origin"},
                     {"base_frame": DRONE_DEVICE_ID + "/fcu"},
                     {"odom_frame": DRONE_DEVICE_ID + "/ned_fcu"},
                     {"scan_topic": "/"+DRONE_DEVICE_ID+"/rplidar/scan"},
+                    {"sys_msg_topic": "syscommand"},
+                    {"pose_update_topic": "poseupdate"},
+                    {"tf_map_scanmatch_transform_frame_name": "scanmatcher_frame"},
                     {"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},
                 ],
                 remappings=[

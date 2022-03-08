@@ -3,6 +3,7 @@ use_tf_scan_transformation: true
 use_tf_pose_start_estimate: false
 pub_map_odom_transform: false
 pub_map_scanmatch_transform: false
+pub_odometry: false # not used, TODO: check if useful or not
 
 # Map size/ start point
 map_resolution: 0.1
@@ -10,6 +11,7 @@ map_size: 2048 # ~82m
 map_start_x: 0.5
 map_start_y: 0.5
 map_multi_res_levels: 3
+map_with_known_poses: false
 
 # Map update parameters
 map_pub_period: 0.5

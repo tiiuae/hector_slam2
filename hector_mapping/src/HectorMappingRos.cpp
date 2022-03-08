@@ -37,6 +37,8 @@
 #include "hector_mapping/HectorDebugInfoProvider.h"
 #include "hector_mapping/HectorMapMutex.h"
 
+#include <fog_lib/params.h>
+
 #include <pluginlib/class_list_macros.hpp>
 
 #ifndef TF2_SCALAR_H
@@ -44,70 +46,85 @@ typedef btScalar tfScalar;
 #endif
 
 using namespace std::placeholders;
+using namespace fog_lib;
 
 namespace hector_mapping
 {
 /* class MapPublisherContainer//{*/
+
 /* empty constructor//{*/
 MapPublisherContainer::MapPublisherContainer() {
 } /*//}*/
+
 /*//}*/
 
-/* HectorMappingRos//{*/
+/* class HectorMappingRos//{*/
+
 /* contructor//{*/
 HectorMappingRos::HectorMappingRos(rclcpp::NodeOptions options) : Node("HectorMappingRos", options) {
 
   /* parse params from config file//{*/
-  p_pub_drawings_               = this->declare_parameter("pub_drawings", false);
-  p_pub_debug_output_           = this->declare_parameter("pub_debug_output", false);
-  p_pub_map_odom_transform_     = this->declare_parameter("pub_map_odom_transform", true);
-  p_pub_odometry_               = this->declare_parameter("pub_odometry", false);
-  p_advertise_map_service_      = this->declare_parameter("advertise_map_service", true);
-  p_scan_subscriber_queue_size_ = this->declare_parameter("scan_subscriber_queue_size", 5);
+  RCLCPP_INFO(get_logger(), "-------------- Loading parameters --------------");
+  bool loaded_successfully = true;
 
-  p_map_resolution_       = this->declare_parameter("map_resolution", 0.025);
-  p_map_size_             = this->declare_parameter("map_size", 1024);
-  p_map_start_x_          = this->declare_parameter("map_start_x", 0.5);
-  p_map_start_y_          = this->declare_parameter("map_start_y", 0.5);
-  p_map_multi_res_levels_ = this->declare_parameter("map_multi_res_levels", 3);
+  loaded_successfully &= parse_param("pub_drawings", p_pub_drawings_, *this);
+  loaded_successfully &= parse_param("pub_debug_output", p_pub_debug_output_, *this);
+  loaded_successfully &= parse_param("pub_map_odom_transform", p_pub_map_odom_transform_, *this);
+  loaded_successfully &= parse_param("pub_odometry", p_pub_odometry_, *this);
+  loaded_successfully &= parse_param("advertise_map_service", p_advertise_map_service_, *this);
+  loaded_successfully &= parse_param("scan_subscriber_queue_size", p_scan_subscriber_queue_size_, *this);
 
-  p_update_factor_free_     = this->declare_parameter("update_factor_free", 0.4);
-  p_update_factor_occupied_ = this->declare_parameter("update_factor_occupied", 0.9);
+  loaded_successfully &= parse_param("map_resolution", p_map_resolution_, *this);
+  loaded_successfully &= parse_param("map_size", p_map_size_, *this);
+  loaded_successfully &= parse_param("map_start_x", p_map_start_x_, *this);
+  loaded_successfully &= parse_param("map_start_y", p_map_start_y_, *this);
+  loaded_successfully &= parse_param("map_multi_res_levels", p_map_multi_res_levels_, *this);
 
-  p_map_update_distance_threshold_ = this->declare_parameter("map_update_distance_thresh", 0.4);
-  p_map_update_angle_threshold_    = this->declare_parameter("map_update_angle_thresh", 0.9);
+  loaded_successfully &= parse_param("update_factor_free", p_update_factor_free_, *this);
+  loaded_successfully &= parse_param("update_factor_occupied", p_update_factor_occupied_, *this);
 
-  p_scan_topic_        = this->declare_parameter("scan_topic", std::string("scan"));
-  p_sys_msg_topic_     = this->declare_parameter("sys_msg_topic", std::string("syscommand"));
-  p_pose_update_topic_ = this->declare_parameter("pose_update_topic", std::string("poseupdate"));
+  loaded_successfully &= parse_param("map_update_distance_thresh", p_map_update_distance_threshold_, *this);
+  loaded_successfully &= parse_param("map_update_angle_thresh", p_map_update_angle_threshold_, *this);
 
-  p_use_tf_scan_transformation_ = this->declare_parameter("use_tf_scan_transformation", true);
-  p_use_tf_pose_start_estimate_ = this->declare_parameter("use_tf_pose_start_estimate", false);
-  p_map_with_known_poses_       = this->declare_parameter("map_with_known_poses", false);
+  loaded_successfully &= parse_param("scan_topic", p_scan_topic_, *this);
+  loaded_successfully &= parse_param("sys_msg_topic", p_sys_msg_topic_, *this);
+  loaded_successfully &= parse_param("pose_update_topic", p_pose_update_topic_, *this);
 
-  p_base_frame_ = this->declare_parameter("base_frame", std::string("base_link"));
-  p_map_frame_  = this->declare_parameter("map_frame", std::string("map"));
-  p_odom_frame_ = this->declare_parameter("odom_frame", std::string("odom"));
+  loaded_successfully &= parse_param("use_tf_scan_transformation", p_use_tf_scan_transformation_, *this);
+  loaded_successfully &= parse_param("use_tf_pose_start_estimate", p_use_tf_pose_start_estimate_, *this);
+  loaded_successfully &= parse_param("map_with_known_poses", p_map_with_known_poses_, *this);
 
-  p_pub_map_scanmatch_transform_           = this->declare_parameter("pub_map_scanmatch_transform", true);
-  p_tf_map_scanmatch_transform_frame_name_ = this->declare_parameter("tf_map_scanmatch_transform_frame_name", std::string("scanmatcher_frame"));
+  loaded_successfully &= parse_param("base_frame", p_base_frame_, *this);
+  loaded_successfully &= parse_param("map_frame", p_map_frame_, *this);
+  loaded_successfully &= parse_param("odom_frame", p_odom_frame_, *this);
 
-  p_timing_output_ = this->declare_parameter("output_timing", false);
+  loaded_successfully &= parse_param("pub_map_scanmatch_transform", p_pub_map_scanmatch_transform_, *this);
+  loaded_successfully &= parse_param("tf_map_scanmatch_transform_frame_name", p_tf_map_scanmatch_transform_frame_name_, *this);
 
-  p_map_pub_period_ = this->declare_parameter("map_pub_period", 2.0);
+  loaded_successfully &= parse_param("output_timing", p_timing_output_, *this);
 
-  double tmp            = 0.0;
-  tmp                   = this->declare_parameter("laser_min_dist", 0.4);
+  loaded_successfully &= parse_param("map_pub_period", p_map_pub_period_, *this);
+
+  double tmp = 0.0;
+  loaded_successfully &= parse_param("laser_min_dist", tmp, *this);
   p_sqr_laser_min_dist_ = static_cast<float>(tmp * tmp);
 
-  tmp                   = this->declare_parameter("laser_max_dist", 30.0);
+  loaded_successfully &= parse_param("laser_max_dist", tmp, *this);
   p_sqr_laser_max_dist_ = static_cast<float>(tmp * tmp);
 
-  tmp                  = this->declare_parameter("laser_z_min_value", -1.0);
+  loaded_successfully &= parse_param("laser_z_min_value", tmp, *this);
   p_laser_z_min_value_ = static_cast<float>(tmp);
 
-  tmp                  = this->declare_parameter("laser_z_max_value", 1.0);
+  loaded_successfully &= parse_param("laser_z_max_value", tmp, *this);
   p_laser_z_max_value_ = static_cast<float>(tmp); /*//}*/
+
+  // Check if all parameters were loaded correctly
+  if (!loaded_successfully) {
+    const std::string str = "Could not load all non-optional parameters. Shutting down.";
+    RCLCPP_ERROR(get_logger(), "%s", str.c_str());
+    rclcpp::shutdown();
+    return;
+  }
 
   debugInfoProvider     = 0;
   hectorDrawings        = 0;
