@@ -49,9 +49,6 @@ def generate_launch_description():
                     {"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},
                 ],
                 remappings=[
-                    # topics
-                    # ("~/topic_out", "~/topic"),
-                    # services
                     ("~/reset_hector", "~/reset_hector"),
                 ],
             ),
