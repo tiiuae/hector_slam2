@@ -6,7 +6,7 @@ pub_map_scanmatch_transform: false
 pub_odometry: false # not used, TODO: check if useful or not
 
 # Map size/ start point
-map_resolution: 0.05
+map_resolution: 0.15
 map_size: 1024 # ~164m
 map_start_x: 0.5
 map_start_y: 0.5

@@ -21,6 +21,8 @@
   <depend>laser_geometry</depend>
   <depend>boost</depend>
 
+  <depend>fog_lib</depend>
+
   <build_depend>rosidl_default_generators</build_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
 
